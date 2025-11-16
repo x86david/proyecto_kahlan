@@ -4,7 +4,7 @@ use Kahlan\Plugin\Double;
 use App\EmailGenerator;
 
 describe("EmailGenerator", function() {
-    it("genera un correo electrónico con el formato correcto", function() {
+    it("Genera un correo electrónico con el formato correcto", function() {
         $emailGenerator = new EmailGenerator();
         $email = $emailGenerator->generateEmail();
 

@@ -14,7 +14,7 @@ describe("DatabaseManager", function() {
         $this->dbManager = new DatabaseManager($this->dbConnection);
     });
 
-    it("debería llamar al método query con los parámetros correctos", function() {
+    it("Debería llamar al método query con los parámetros correctos", function() {
         // Stub: cuando se llame a query, devolver true
         allow($this->dbConnection)->toReceive('query')->andReturn(true);
 
@@ -25,7 +25,7 @@ describe("DatabaseManager", function() {
         expect($result)->toBe(true);
     });
 
-    it("debería manejar un error si la base de datos no está disponible", function() {
+    it("Debería manejar un error la tabla no existe", function() {
         // Stub: cuando se llame a query, lanzar excepción
         allow($this->dbConnection)->toReceive('query')->andRun(function($sql) {
             throw new \Exception("Database connection failed");
