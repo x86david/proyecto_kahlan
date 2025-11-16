@@ -64,9 +64,9 @@ Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan**
 proyecto_kahlan/
 ├── composer.json
 ├── src/
-│   └── EmailGenerator.php
+│   └── emailValidator.php
 └── spec/
-    └── EmailGeneratorSpec.php
+    └── emailValidatorSpec.php
 ```
 
 ---
@@ -97,15 +97,15 @@ composer dump-autoload
 
 ## 🖥️ Ejemplo de clase
 
-`src/EmailGenerator.php`:
+`src/emailValidator.php`:
 ```php
 <?php
 
 namespace App;
 
-class EmailGenerator
+class emailValidator
 {
-    public function generateEmail()
+    public function validateEmail()
     {
         $name = substr(md5(uniqid(rand(), true)), 0, 10);
         $domain = 'example.com';
@@ -118,16 +118,16 @@ class EmailGenerator
 
 ## 🧪 Ejemplo de prueba con Kahlan
 
-`spec/EmailGeneratorSpec.php`:
+`spec/emailValidatorSpec.php`:
 ```php
 <?php
 
-use App\EmailGenerator;
+use App\emailValidator;
 
-describe("EmailGenerator", function() {
+describe("emailValidator", function() {
     it("genera un correo electrónico con el formato correcto", function() {
-        $emailGenerator = new EmailGenerator();
-        $email = $emailGenerator->generateEmail();
+        $emailValidator = new emailValidator();
+        $email = $emailValidator->validateEmail();
 
         $regex = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/';
         expect($email)->toMatch($regex);
@@ -145,7 +145,7 @@ vendor/bin/kahlan
 
 Salida esperada:
 ```
-EmailGenerator
+emailValidator
   ✓ genera un correo electrónico con el formato correcto
 
 Passed 1 of 1 PASS in 0.02 seconds
