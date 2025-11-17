@@ -125,13 +125,20 @@ class emailValidator
 use App\emailValidator;
 
 describe("emailValidator", function() {
-    it("genera un correo electrónico con el formato correcto", function() {
-        $emailValidator = new emailValidator();
-        $email = $emailValidator->validateEmail();
+    it("Devuelve true para un correo válido", function() {
+        $emailValidator = new EmailValidator();
+        $resultado = $emailValidator->validateEmail("usuario@dominio.com");
 
-        $regex = '/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/';
-        expect($email)->toMatch($regex);
+        expect($resultado)->toBe(true);
     });
+
+    it("Devuelve false para un correo inválido", function() {
+        $emailValidator = new EmailValidator();
+        $resultado = $emailValidator->validateEmail("correo-invalido");
+
+        expect($resultado)->toBe(false);
+    });
+
 });
 ```
 
