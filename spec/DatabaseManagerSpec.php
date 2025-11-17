@@ -22,7 +22,7 @@ describe("DatabaseManager", function() {
         $result = $this->dbManager->fetchData('users');
 
         // Comprobamos el resultado
-        expect($result)->toBe(true);
+        expect($result)->toBeAn('array');
     });
 
     it("Debería manejar un error la tabla no existe", function() {
@@ -39,3 +39,4 @@ describe("DatabaseManager", function() {
     });
 
 });
+?>
