@@ -1,8 +1,9 @@
 
 ```markdown
-# Proyecto de pruebas con Kahlan
+# 🧪 Proyecto de pruebas con Kahlan
 
-Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan** como framework de pruebas unitarias estilo BDD para PHP.
+Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan** como framework de pruebas unitarias estilo BDD para PHP.  
+El objetivo es mostrar cómo estructurar un proyecto con pruebas automatizadas, autoload y configuración personalizada.
 
 ---
 
@@ -19,7 +20,7 @@ Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan**
    curl -sS https://getcomposer.org/installer -o composer-setup.php
    ```
 
-3. Verificar el instalador (opcional pero recomendado):
+3. Verificar el instalador:
    ```bash
    HASH=$(curl -sS https://composer.github.io/installer.sig)
    php -r "if (hash_file('SHA384', 'composer-setup.php') === '$HASH') { echo 'Installer verified'; } else { echo 'Installer corrupt'; unlink('composer-setup.php'); } echo PHP_EOL;"
@@ -63,17 +64,18 @@ Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan**
 ```
 proyecto_kahlan/
 ├── composer.json
+├── kahlan-config.php
 ├── src/
-│   └── emailValidator.php
+│   └── EmailValidator.php
 └── spec/
-    └── emailValidatorSpec.php
+    └── EmailValidatorSpec.php
 ```
 
 ---
 
-## ⚙️ Configuración de Autoload
+## ⚙️ Configuración de Autoload en `composer.json`
 
-En `composer.json` añade:
+Ejemplo de configuración mínima:
 
 ```json
 {
@@ -93,23 +95,43 @@ Después ejecuta:
 composer dump-autoload
 ```
 
+Esto asegura que las clases en `src/` se carguen automáticamente bajo el namespace `App`.
+
+---
+
+## ⚙️ Configuración de Kahlan (`kahlan-config.php`)
+
+Puedes personalizar cómo Kahlan encuentra tus pruebas y tu código fuente:
+
+```php
+<?php
+use Kahlan\Plugin\Double;
+
+require 'vendor/autoload.php';
+
+$config = [
+    'autoload' => 'src',        // Carpeta donde está el código fuente
+    'specs'    => 'spec'        // Carpeta donde están las pruebas
+];
+
+return $config;
+```
+
 ---
 
 ## 🖥️ Ejemplo de clase
 
-`src/emailValidator.php`:
+`src/EmailValidator.php`:
 ```php
 <?php
 
 namespace App;
 
-class emailValidator
+class EmailValidator
 {
-    public function validateEmail()
+    public function validateEmail(string $email): bool
     {
-        $name = substr(md5(uniqid(rand(), true)), 0, 10);
-        $domain = 'example.com';
-        return $name . '@' . $domain;
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 }
 ```
@@ -118,27 +140,26 @@ class emailValidator
 
 ## 🧪 Ejemplo de prueba con Kahlan
 
-`spec/emailValidatorSpec.php`:
+`spec/EmailValidatorSpec.php`:
 ```php
 <?php
 
-use App\emailValidator;
+use App\EmailValidator;
 
-describe("emailValidator", function() {
+describe("EmailValidator", function() {
     it("Devuelve true para un correo válido", function() {
-        $emailValidator = new EmailValidator();
-        $resultado = $emailValidator->validateEmail("usuario@dominio.com");
+        $validator = new EmailValidator();
+        $resultado = $validator->validateEmail("usuario@dominio.com");
 
         expect($resultado)->toBe(true);
     });
 
     it("Devuelve false para un correo inválido", function() {
-        $emailValidator = new EmailValidator();
-        $resultado = $emailValidator->validateEmail("correo-invalido");
+        $validator = new EmailValidator();
+        $resultado = $validator->validateEmail("correo-invalido");
 
         expect($resultado)->toBe(false);
     });
-
 });
 ```
 
@@ -152,10 +173,11 @@ vendor/bin/kahlan
 
 Salida esperada:
 ```
-emailValidator
-  ✓ genera un correo electrónico con el formato correcto
+EmailValidator
+  ✓ Devuelve true para un correo válido
+  ✓ Devuelve false para un correo inválido
 
-Passed 1 of 1 PASS in 0.02 seconds
+Passed 2 of 2 PASS in 0.02 seconds
 ```
 
 ---
@@ -166,7 +188,179 @@ Con estos pasos tienes:
 - Composer instalado globalmente.
 - Kahlan configurado como dependencia de desarrollo.
 - Autoload de Composer apuntando a `src/`.
+- Configuración de Kahlan en `kahlan-config.php`.
 - Pruebas en `spec/` que se ejecutan con `vendor/bin/kahlan`.
 
+Esto te permite mantener un flujo de trabajo limpio, escalable y fácil de presentar en tu proyecto de pruebas.
 ```
+
+---
+
+---
+
+## 📖 ¿Qué es el patrón Repositorio?
+
+El **patrón repositorio** es una forma de organizar el acceso a datos en aplicaciones orientadas a objetos.  
+Su idea principal es **separar la lógica de negocio de la lógica de persistencia**:
+
+- La **lógica de negocio** trabaja con objetos (`User`).
+- La **lógica de persistencia** (repositorio) se encarga de obtener y guardar esos objetos en la base de datos (o en memoria, o en un API).
+
+---
+
+## 🧩 Beneficios
+- **Desacoplamiento**: el código de negocio no depende de cómo se accede a los datos.  
+- **Testabilidad**: podemos sustituir la implementación real por una simulada en pruebas.  
+- **Flexibilidad**: podemos tener varias implementaciones (`UserDatabaseRepository`, `UserInMemoryRepository`).  
+- **Claridad**: el repositorio define un contrato claro (`UserRepository`) que todas las implementaciones deben cumplir.  
+
+---
+
+## 📄 Ejemplo en tu proyecto
+
+### 1. La **entidad de dominio** (`User`)
+```php
+namespace App\Entity;
+
+class User {
+    private int $id;
+    private string $nombre;
+
+    public function __construct(int $id, string $nombre) {
+        $this->id = $id;
+        $this->nombre = $nombre;
+    }
+
+    public function getId(): int { return $this->id; }
+    public function getNombre(): string { return $this->nombre; }
+}
+```
+👉 Representa el objeto de negocio, independiente de cómo se guarda.
+
+---
+
+### 2. La **interfaz del repositorio** (`UserRepository`)
+```php
+namespace App\Repository;
+
+use App\Entity\User;
+
+interface UserRepository {
+    public function findById(int $id): ?User;
+    public function findAll(): array;
+    public function save(User $user): void;
+}
+```
+👉 Define el contrato: cualquier repositorio de usuarios debe poder buscar, listar y guardar.
+
+---
+
+### 3. La **implementación con base de datos simulada** (`UserDatabaseRepository`)
+```php
+namespace App\Repository;
+
+use App\DatabaseConnection;
+use App\Entity\User;
+
+class UserDatabaseRepository implements UserRepository {
+    private DatabaseConnection $db;
+
+    public function __construct(DatabaseConnection $db) {
+        $this->db = $db;
+    }
+
+    public function findById(int $id): ?User {
+        $row = $this->db->query($id);
+        return $row ? new User($row['id'], $row['nombre']) : null;
+    }
+
+    public function findAll(): array {
+        $rows = $this->db->queryArray("SELECT * FROM users");
+        return array_map(fn($row) => new User($row['id'], $row['nombre']), $rows);
+    }
+
+    public function save(User $user): void {
+        if ($user->getId() < 0) {
+            throw new \InvalidArgumentException("El ID del usuario no puede ser negativo");
+        }
+        $this->db->insertOrUpdate($user);
+    }
+}
+```
+👉 Implementa el contrato usando `DatabaseConnection`.
+
+---
+
+### 4. La **conexión simulada** (`DatabaseConnection`)
+```php
+namespace App;
+
+use App\Entity\User;
+
+class DatabaseConnection {
+    private array $data = [
+        ['id' => 1, 'nombre' => 'Carlos'],
+        ['id' => 2, 'nombre' => 'Ana'],
+    ];
+
+    public function queryArray(string $sql): array {
+        return $this->data;
+    }
+
+    public function query(int $id): ?array {
+        foreach ($this->data as $row) {
+            if ($row['id'] === $id) return $row;
+        }
+        return null;
+    }
+
+    public function insertOrUpdate(User $user): void {
+        foreach ($this->data as &$row) {
+            if ($row['id'] === $user->getId()) {
+                $row['nombre'] = $user->getNombre();
+                return;
+            }
+        }
+        $this->data[] = ['id' => $user->getId(), 'nombre' => $user->getNombre()];
+    }
+}
+```
+👉 Simula una base de datos en memoria.
+
+---
+
+## 🧪 En las pruebas (Kahlan)
+
+Gracias al patrón repositorio y la inyección de dependencias, en los tests podemos sustituir la conexión real por un **doble/mocking**:
+
+```php
+use Kahlan\Plugin\Double;
+use App\Repository\UserDatabaseRepository;
+use App\Entity\User;
+
+describe("UserRepository", function() {
+    beforeEach(function() {
+        $this->dbConnection = Double::instance(['extends' => DatabaseConnection::class]);
+        $this->userRepo = new UserDatabaseRepository($this->dbConnection);
+    });
+
+    it("Devuelve un User cuando se encuentra por ID", function() {
+        allow($this->dbConnection)->toReceive('query')->andReturn(['id' => 1, 'nombre' => 'Carlos']);
+        $user = $this->userRepo->findById(1);
+        expect($user->getNombre())->toBe('Carlos');
+    });
+});
+```
+
+---
+
+## ✅ Conclusión
+
+El proyecto aplica el **patrón repositorio** para:
+- Definir un contrato (`UserRepository`).
+- Implementar una versión concreta (`UserDatabaseRepository`).
+- Simular la base de datos (`DatabaseConnection`).
+- Facilitar pruebas unitarias con Kahlan gracias a la **inyección de dependencias**.
+
+---
 
