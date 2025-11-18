@@ -281,7 +281,7 @@ class UserDatabaseRepository implements UserRepository {
 ### 4. Utilidades
 Ejemplo de validador de email.
 
-#### 📂 src/EmailValidator.php
+#### 📂 src/Application/Validator/EmailValidator.php
 ```php
 namespace App;
 
