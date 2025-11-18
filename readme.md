@@ -1,6 +1,4 @@
-Aquí tienes un **README completo y bien estructurado** que integra tanto la parte de configuración de **Composer + Kahlan** como la explicación del **patrón repositorio** aplicado en tu proyecto. He organizado todo en secciones claras para que sea fácil de seguir y presentar:
 
-```markdown
 # 🧪 Proyecto de pruebas con Kahlan y Patrón Repositorio
 
 Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan** como framework de pruebas unitarias estilo BDD para PHP.  
@@ -296,8 +294,3 @@ Con este proyecto tienes:
 - Pruebas unitarias con Kahlan que validan el comportamiento de tus repositorios.
 
 Esto asegura un flujo de trabajo **limpio, escalable y fácil de presentar** en tu proyecto de pruebas.
-```
-
----
-
-👉 Te lo dejé listo para que lo uses como README en tu proyecto. ¿Quieres que además te prepare un ejemplo de **UserInMemoryRepository** para que veas cómo se haría una implementación alternativa sin base de datos, ideal para pruebas rápidas?
