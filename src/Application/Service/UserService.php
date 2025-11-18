@@ -12,8 +12,8 @@ class UserService {
     }
 
     public function registerUser(User $user): void {
-        if ($user->getId() <= 1) {
-            throw new \DomainException("El ID del usuario debe ser mayor que 1");
+        if ($user->getId() < 1) {
+            throw new \DomainException("El ID del usuario debe ser mayor que 0");
         }
 
         if (empty($user->getNombre())) {
