@@ -113,26 +113,26 @@ El dominio principal es la gestión de usuarios (`User`), con reglas de negocio 
 
 ```
 src/
-├── Domain/
+├── Domain/                        # Capa de dominio: entidades y contratos
 │   ├── Entity/
-│   │   └── User.php
+│   │   └── User.php               # Entidad User: datos y lógica propia
 │   └── Repository/
-│       └── UserRepository.php
-├── Application/
+│       └── UserRepository.php     # Interfaz repositorio: contrato para persistencia
+├── Application/                   # Capa de aplicación: casos de uso y validadores
 │   └── Service/
-│       └── UserService.php
+│       └── UserService.php        # Servicio: aplica reglas de negocio y coordina repositorios
 │   └── Validator/
-│       └── EmailValidator.php
-├── Infrastructure/
+│       └── EmailValidator.php     # Validador: lógica de validación (ej. correos electrónicos)
+├── Infrastructure/                # Capa de infraestructura: detalles técnicos
 │   └── Persistence/
-│       ├── DatabaseConnection.php
-│       └── UserDatabaseRepository.php
-└── EmailValidator.php
+│       ├── DatabaseConnection.php # Simulación de conexión a base de datos (en memoria)
+│       └── UserDatabaseRepository.php # Implementación concreta del repositorio usando DatabaseConnection
+└── EmailValidator.php             # (Duplicado anterior, ahora debería estar en Application/Validator)
 
-spec/
-├── UserServiceSpec.php
-├── UserRepositorySpec.php
-└── EmailValidatorSpec.php
+spec/                              # Carpeta de pruebas con Kahlan
+├── UserServiceSpec.php            # Pruebas de reglas de negocio en UserService
+├── UserRepositorySpec.php         # Pruebas de persistencia en UserDatabaseRepository
+└── EmailValidatorSpec.php         # Pruebas de validación de correos 
 ```
 
 ---
