@@ -22,12 +22,12 @@ describe("UserService", function () {
         expect($found[2]->getNombre())->toBe("Lucía");
     });
 
-    it("debería lanzar excepción si el ID <= 1", function () {
-        $user = new User(1, "Prueba");
+    it("debería lanzar excepción si el ID < 1", function () {
+        $user = new User(0, "Prueba");
 
         expect(function () use ($user) {
             $this->service->registerUser($user);
-        })->toThrow(new DomainException("El ID del usuario debe ser mayor que 1"));
+        })->toThrow(new DomainException("El ID del usuario debe ser mayor que 0"));
     });
 
     it("debería lanzar excepción si el nombre está vacío", function () {
