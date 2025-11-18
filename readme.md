@@ -1,9 +1,10 @@
+Aquí tienes un **README completo y bien estructurado** que integra tanto la parte de configuración de **Composer + Kahlan** como la explicación del **patrón repositorio** aplicado en tu proyecto. He organizado todo en secciones claras para que sea fácil de seguir y presentar:
 
 ```markdown
-# 🧪 Proyecto de pruebas con Kahlan
+# 🧪 Proyecto de pruebas con Kahlan y Patrón Repositorio
 
 Este proyecto utiliza **Composer** para la gestión de dependencias y **Kahlan** como framework de pruebas unitarias estilo BDD para PHP.  
-El objetivo es mostrar cómo estructurar un proyecto con pruebas automatizadas, autoload y configuración personalizada.
+Además, aplica el **patrón repositorio** para desacoplar la lógica de negocio de la lógica de persistencia, logrando un flujo de trabajo limpio, escalable y fácil de probar.
 
 ---
 
@@ -66,9 +67,16 @@ proyecto_kahlan/
 ├── composer.json
 ├── kahlan-config.php
 ├── src/
-│   └── EmailValidator.php
+│   ├── EmailValidator.php
+│   ├── Entity/
+│   │   └── User.php
+│   ├── Repository/
+│   │   ├── UserRepository.php
+│   │   └── UserDatabaseRepository.php
+│   └── DatabaseConnection.php
 └── spec/
-    └── EmailValidatorSpec.php
+    ├── EmailValidatorSpec.php
+    └── UserRepositorySpec.php
 ```
 
 ---
@@ -101,8 +109,6 @@ Esto asegura que las clases en `src/` se carguen automáticamente bajo el namesp
 
 ## ⚙️ Configuración de Kahlan (`kahlan-config.php`)
 
-Puedes personalizar cómo Kahlan encuentra tus pruebas y tu código fuente:
-
 ```php
 <?php
 use Kahlan\Plugin\Double;
@@ -119,96 +125,15 @@ return $config;
 
 ---
 
-## 🖥️ Ejemplo de clase
+## 📖 Patrón Repositorio
 
-`src/EmailValidator.php`:
-```php
-<?php
-
-namespace App;
-
-class EmailValidator
-{
-    public function validateEmail(string $email): bool
-    {
-        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-    }
-}
-```
-
----
-
-## 🧪 Ejemplo de prueba con Kahlan
-
-`spec/EmailValidatorSpec.php`:
-```php
-<?php
-
-use App\EmailValidator;
-
-describe("EmailValidator", function() {
-    it("Devuelve true para un correo válido", function() {
-        $validator = new EmailValidator();
-        $resultado = $validator->validateEmail("usuario@dominio.com");
-
-        expect($resultado)->toBe(true);
-    });
-
-    it("Devuelve false para un correo inválido", function() {
-        $validator = new EmailValidator();
-        $resultado = $validator->validateEmail("correo-invalido");
-
-        expect($resultado)->toBe(false);
-    });
-});
-```
-
----
-
-## ▶️ Ejecutar las pruebas
-
-```bash
-vendor/bin/kahlan
-```
-
-Salida esperada:
-```
-EmailValidator
-  ✓ Devuelve true para un correo válido
-  ✓ Devuelve false para un correo inválido
-
-Passed 2 of 2 PASS in 0.02 seconds
-```
-
----
-
-## ✅ Conclusión
-
-Con estos pasos tienes:
-- Composer instalado globalmente.
-- Kahlan configurado como dependencia de desarrollo.
-- Autoload de Composer apuntando a `src/`.
-- Configuración de Kahlan en `kahlan-config.php`.
-- Pruebas en `spec/` que se ejecutan con `vendor/bin/kahlan`.
-
-Esto te permite mantener un flujo de trabajo limpio, escalable y fácil de presentar en tu proyecto de pruebas.
-```
-
----
-
----
-
-## 📖 ¿Qué es el patrón Repositorio?
-
-El **patrón repositorio** es una forma de organizar el acceso a datos en aplicaciones orientadas a objetos.  
+El **patrón repositorio** organiza el acceso a datos en aplicaciones orientadas a objetos.  
 Su idea principal es **separar la lógica de negocio de la lógica de persistencia**:
 
 - La **lógica de negocio** trabaja con objetos (`User`).
 - La **lógica de persistencia** (repositorio) se encarga de obtener y guardar esos objetos en la base de datos (o en memoria, o en un API).
 
----
-
-## 🧩 Beneficios
+### Beneficios
 - **Desacoplamiento**: el código de negocio no depende de cómo se accede a los datos.  
 - **Testabilidad**: podemos sustituir la implementación real por una simulada en pruebas.  
 - **Flexibilidad**: podemos tener varias implementaciones (`UserDatabaseRepository`, `UserInMemoryRepository`).  
@@ -216,9 +141,9 @@ Su idea principal es **separar la lógica de negocio de la lógica de persistenc
 
 ---
 
-## 📄 Ejemplo en tu proyecto
+## 📄 Ejemplo aplicado
 
-### 1. La **entidad de dominio** (`User`)
+### Entidad de dominio (`User`)
 ```php
 namespace App\Entity;
 
@@ -235,11 +160,8 @@ class User {
     public function getNombre(): string { return $this->nombre; }
 }
 ```
-👉 Representa el objeto de negocio, independiente de cómo se guarda.
 
----
-
-### 2. La **interfaz del repositorio** (`UserRepository`)
+### Interfaz del repositorio (`UserRepository`)
 ```php
 namespace App\Repository;
 
@@ -251,11 +173,8 @@ interface UserRepository {
     public function save(User $user): void;
 }
 ```
-👉 Define el contrato: cualquier repositorio de usuarios debe poder buscar, listar y guardar.
 
----
-
-### 3. La **implementación con base de datos simulada** (`UserDatabaseRepository`)
+### Implementación con base de datos simulada (`UserDatabaseRepository`)
 ```php
 namespace App\Repository;
 
@@ -287,11 +206,8 @@ class UserDatabaseRepository implements UserRepository {
     }
 }
 ```
-👉 Implementa el contrato usando `DatabaseConnection`.
 
----
-
-### 4. La **conexión simulada** (`DatabaseConnection`)
+### Conexión simulada (`DatabaseConnection`)
 ```php
 namespace App;
 
@@ -325,13 +241,12 @@ class DatabaseConnection {
     }
 }
 ```
-👉 Simula una base de datos en memoria.
 
 ---
 
-## 🧪 En las pruebas (Kahlan)
+## 🧪 Pruebas con Kahlan
 
-Gracias al patrón repositorio y la inyección de dependencias, en los tests podemos sustituir la conexión real por un **doble/mocking**:
+Ejemplo de prueba para el repositorio:
 
 ```php
 use Kahlan\Plugin\Double;
@@ -354,13 +269,35 @@ describe("UserRepository", function() {
 
 ---
 
-## ✅ Conclusión
+## ▶️ Ejecutar las pruebas
 
-El proyecto aplica el **patrón repositorio** para:
-- Definir un contrato (`UserRepository`).
-- Implementar una versión concreta (`UserDatabaseRepository`).
-- Simular la base de datos (`DatabaseConnection`).
-- Facilitar pruebas unitarias con Kahlan gracias a la **inyección de dependencias**.
+```bash
+vendor/bin/kahlan
+```
+
+Salida esperada:
+```
+UserRepository
+  ✓ Devuelve un User cuando se encuentra por ID
+
+Passed 1 of 1 PASS in 0.02 seconds
+```
 
 ---
 
+## ✅ Conclusión
+
+Con este proyecto tienes:
+- Composer instalado globalmente.
+- Kahlan configurado como dependencia de desarrollo.
+- Autoload de Composer apuntando a `src/`.
+- Configuración de Kahlan en `kahlan-config.php`.
+- Aplicación del **patrón repositorio** para desacoplar negocio y persistencia.
+- Pruebas unitarias con Kahlan que validan el comportamiento de tus repositorios.
+
+Esto asegura un flujo de trabajo **limpio, escalable y fácil de presentar** en tu proyecto de pruebas.
+```
+
+---
+
+👉 Te lo dejé listo para que lo uses como README en tu proyecto. ¿Quieres que además te prepare un ejemplo de **UserInMemoryRepository** para que veas cómo se haría una implementación alternativa sin base de datos, ideal para pruebas rápidas?
