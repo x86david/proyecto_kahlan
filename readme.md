@@ -314,10 +314,10 @@ class UserService {
 
     public function registerUser(User $user): void {
         // ✅ Lógica de negocio: validación
+
         if ($user->getId() <= 1) {
             throw new \DomainException("El ID del usuario debe ser mayor que 1");
         }
-
 
         if (empty($user->getNombre())) {
             throw new \DomainException("El nombre no puede estar vacío");
@@ -333,10 +333,12 @@ class UserService {
 }
 ```
 
+---
+
 ### 🔑 Puntos clave
-- El **UserService** aplica reglas de negocio (validaciones, restricciones).
-- El **UserRepository** se limita a la persistencia (guardar, buscar, listar).
-- Esto permite que las pruebas unitarias validen tanto la lógica de negocio como la persistencia de forma independiente.
+- El **UserService** aplica reglas de negocio (validaciones, restricciones).  
+- El **UserRepository** se limita a la persistencia (guardar, buscar, listar).  
+- Esto permite que las pruebas unitarias validen tanto la lógica de negocio como la persistencia de forma independiente.  
 
 ---
 
@@ -345,11 +347,22 @@ class UserService {
 - **Repositorio**  
   - Encapsula el acceso a datos.  
   - Puede implementar lógica de persistencia como *upsert* (update si existe, insert si no).  
-  - No debería imponer reglas de negocio arbitrarias.
+  - No debería imponer reglas de negocio arbitrarias.  
 
 - **Servicio de dominio**  
   - Aplica reglas como “el ID debe ser mayor que 1” o “el nombre no puede estar vacío”.  
   - Valida antes de llamar al repositorio.  
-  - Lanza excepciones de dominio (`DomainException`, `InvalidArgumentException`, etc.) si algo no cumple las reglas.
+  - Lanza excepciones de dominio (`DomainException`, `InvalidArgumentException`, etc.) si algo no cumple las reglas.  
+
+---
+
+## 🧪 Uso de mocks en pruebas
+
+- **Repositorio (`UserRepository`)**: se prueba con la conexión simulada (`DatabaseConnection`) para validar la persistencia.  
+- **Servicio (`UserService`)**: se prueba con un repositorio **mockeado** usando `Double` de Kahlan, para aislar la lógica de negocio y comprobar que lanza excepciones cuando los datos son inválidos.  
+
+👉 De esta forma, los tests se centran en cada capa por separado:  
+- Persistencia → con datos simulados.  
+- Lógica de negocio → con repositorios simulados.  
 
 ---
