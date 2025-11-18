@@ -58,27 +58,6 @@ Además, aplica el **patrón repositorio** para desacoplar la lógica de negocio
 
 ---
 
-## 📂 Estructura del proyecto
-
-```
-proyecto_kahlan/
-├── composer.json
-├── kahlan-config.php
-├── src/
-│   ├── EmailValidator.php
-│   ├── Entity/
-│   │   └── User.php
-│   ├── Repository/
-│   │   ├── UserRepository.php
-│   │   └── UserDatabaseRepository.php
-│   └── DatabaseConnection.php
-└── spec/
-    ├── EmailValidatorSpec.php
-    └── UserRepositorySpec.php
-```
-
----
-
 ## ⚙️ Configuración de Autoload en `composer.json`
 
 Ejemplo de configuración mínima:
@@ -142,6 +121,8 @@ src/
 ├── Application/
 │   └── Service/
 │       └── UserService.php
+│   └── Validator/
+│       └── EmailValidator.php
 ├── Infrastructure/
 │   └── Persistence/
 │       ├── DatabaseConnection.php
@@ -155,6 +136,7 @@ spec/
 ```
 
 ---
+
 
 ## 🏛️ Arquitectura por capas
 
