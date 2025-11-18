@@ -123,27 +123,47 @@ return $config;
 
 ---
 
-## 📖 Patrón Repositorio
+# Proyecto de ejemplo: Arquitectura limpia + Testing con Kahlan
 
-El **patrón repositorio** organiza el acceso a datos en aplicaciones orientadas a objetos.  
-Su idea principal es **separar la lógica de negocio de la lógica de persistencia**:
-
-- La **lógica de negocio** trabaja con objetos (`User`).
-- La **lógica de persistencia** (repositorio) se encarga de obtener y guardar esos objetos en la base de datos (o en memoria, o en un API).
-
-### Beneficios
-- **Desacoplamiento**: el código de negocio no depende de cómo se accede a los datos.  
-- **Testabilidad**: podemos sustituir la implementación real por una simulada en pruebas.  
-- **Flexibilidad**: podemos tener varias implementaciones (`UserDatabaseRepository`, `UserInMemoryRepository`).  
-- **Claridad**: el repositorio define un contrato claro (`UserRepository`) que todas las implementaciones deben cumplir.  
+Este proyecto demuestra cómo organizar una aplicación PHP con **arquitectura por capas** y cómo escribir pruebas unitarias con **Kahlan**.  
+El dominio principal es la gestión de usuarios (`User`), con reglas de negocio simples y persistencia simulada en memoria.
 
 ---
 
-## 📄 Ejemplo aplicado
+## 📂 Estructura del proyecto
 
-### Entidad de dominio (`User`)
+```
+src/
+├── Domain/
+│   ├── Entity/
+│   │   └── User.php
+│   └── Repository/
+│       └── UserRepository.php
+├── Application/
+│   └── Service/
+│       └── UserService.php
+├── Infrastructure/
+│   └── Persistence/
+│       ├── DatabaseConnection.php
+│       └── UserDatabaseRepository.php
+└── EmailValidator.php
+
+spec/
+├── UserServiceSpec.php
+├── UserRepositorySpec.php
+└── EmailValidatorSpec.php
+```
+
+---
+
+## 🏛️ Arquitectura por capas
+
+### 1. Dominio
+Contiene las **entidades** y **contratos**. No depende de nada externo.
+
+#### 📂 src/Domain/Entity/User.php
 ```php
-namespace App\Entity;
+namespace App\Domain\Entity;
 
 class User {
     private int $id;
@@ -156,35 +176,108 @@ class User {
 
     public function getId(): int { return $this->id; }
     public function getNombre(): string { return $this->nombre; }
+    public function setNombre(string $nombre): void { $this->nombre = $nombre; }
 }
 ```
 
-### Interfaz del repositorio (`UserRepository`)
+#### 📂 src/Domain/Repository/UserRepository.php
 ```php
-namespace App\Repository;
+namespace App\Domain\Repository;
 
-use App\Entity\User;
+use App\Domain\Entity\User;
 
 interface UserRepository {
     public function findById(int $id): ?User;
     public function findAll(): array;
     public function save(User $user): void;
+    public function deleteById(int $id): void;
 }
 ```
 
-### Implementación con base de datos simulada (`UserDatabaseRepository`)
-```php
-namespace App\Repository;
+---
 
-use App\DatabaseConnection;
-use App\Entity\User;
+### 2. Aplicación
+Define los **casos de uso** y aplica reglas de negocio.
+
+#### 📂 src/Application/Service/UserService.php
+```php
+namespace App\Application\Service;
+
+use App\Domain\Entity\User;
+use App\Domain\Repository\UserRepository;
+
+class UserService {
+    private UserRepository $repo;
+
+    public function __construct(UserRepository $repo) {
+        $this->repo = $repo;
+    }
+
+    public function registerUser(User $user): void {
+        if ($user->getId() < 1) {
+            throw new \DomainException("El ID del usuario debe ser mayor que 0");
+        }
+        if (empty($user->getNombre())) {
+            throw new \DomainException("El nombre no puede estar vacío");
+        }
+        $this->repo->save($user);
+    }
+
+    public function listUsers(): array {
+        return $this->repo->findAll();
+    }
+
+    public function deleteUser(int $id): void {
+        $this->repo->deleteById($id);
+    }
+}
+```
+
+---
+
+### 3. Infraestructura
+Implementa detalles técnicos como persistencia.
+
+#### 📂 src/Infrastructure/Persistence/DatabaseConnection.php
+```php
+namespace App\Infrastructure\Persistence;
+
+use App\Domain\Entity\User;
+
+class DatabaseConnection {
+    private array $data = [
+        ['id' => 1, 'nombre' => 'Carlos'],
+        ['id' => 2, 'nombre' => 'Ana'],
+    ];
+
+    public function queryArray(string $sql): array { return $this->data; }
+    public function query(int $id): ?array {
+        foreach ($this->data as $row) if ($row['id'] === $id) return $row;
+        return null;
+    }
+    public function insertOrUpdate(User $user): void {
+        foreach ($this->data as &$row) {
+            if ($row['id'] === $user->getId()) { $row['nombre'] = $user->getNombre(); return; }
+        }
+        $this->data[] = ['id' => $user->getId(), 'nombre' => $user->getNombre()];
+    }
+    public function deleteById(int $id): void {
+        foreach ($this->data as $key => $row) if ($row['id'] === $id) unset($this->data[$key]);
+    }
+}
+```
+
+#### 📂 src/Infrastructure/Persistence/UserDatabaseRepository.php
+```php
+namespace App\Infrastructure\Persistence;
+
+use App\Domain\Entity\User;
+use App\Domain\Repository\UserRepository;
 
 class UserDatabaseRepository implements UserRepository {
     private DatabaseConnection $db;
 
-    public function __construct(DatabaseConnection $db) {
-        $this->db = $db;
-    }
+    public function __construct(DatabaseConnection $db) { $this->db = $db; }
 
     public function findById(int $id): ?User {
         $row = $this->db->query($id);
@@ -196,173 +289,134 @@ class UserDatabaseRepository implements UserRepository {
         return array_map(fn($row) => new User($row['id'], $row['nombre']), $rows);
     }
 
-    public function save(User $user): void {
-        if ($user->getId() < 0) {
-            throw new \InvalidArgumentException("El ID del usuario no puede ser negativo");
-        }
-        $this->db->insertOrUpdate($user);
-    }
+    public function save(User $user): void { $this->db->insertOrUpdate($user); }
+    public function deleteById(int $id): void { $this->db->deleteById($id); }
 }
 ```
 
-### Conexión simulada (`DatabaseConnection`)
+---
+
+### 4. Utilidades
+Ejemplo de validador de email.
+
+#### 📂 src/EmailValidator.php
 ```php
 namespace App;
 
-use App\Entity\User;
-
-class DatabaseConnection {
-    private array $data = [
-        ['id' => 1, 'nombre' => 'Carlos'],
-        ['id' => 2, 'nombre' => 'Ana'],
-    ];
-
-    public function queryArray(string $sql): array {
-        return $this->data;
-    }
-
-    public function query(int $id): ?array {
-        foreach ($this->data as $row) {
-            if ($row['id'] === $id) return $row;
-        }
-        return null;
-    }
-
-    public function insertOrUpdate(User $user): void {
-        foreach ($this->data as &$row) {
-            if ($row['id'] === $user->getId()) {
-                $row['nombre'] = $user->getNombre();
-                return;
-            }
-        }
-        $this->data[] = ['id' => $user->getId(), 'nombre' => $user->getNombre()];
+class EmailValidator {
+    public function validateEmail(string $email): bool {
+        return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
     }
 }
 ```
 
 ---
 
-## 🧪 Pruebas con Kahlan
+## 🧪 Testing con Kahlan
 
-Ejemplo de prueba para el repositorio:
-
+### 📂 spec/UserRepositorySpec.php
+Prueba la persistencia simulada.
 ```php
-use Kahlan\Plugin\Double;
-use App\Repository\UserDatabaseRepository;
-use App\Entity\User;
+use App\Domain\Entity\User;
+use App\Infrastructure\Persistence\DatabaseConnection;
+use App\Infrastructure\Persistence\UserDatabaseRepository;
 
-describe("UserRepository", function() {
-    beforeEach(function() {
-        $this->dbConnection = Double::instance(['extends' => DatabaseConnection::class]);
-        $this->userRepo = new UserDatabaseRepository($this->dbConnection);
+describe("UserDatabaseRepository", function () {
+    beforeEach(function () { $this->userRepo = new UserDatabaseRepository(new DatabaseConnection()); });
+
+    it("devuelve un User existente", function () {
+        $user = $this->userRepo->findById(1);
+        expect($user)->toBeAnInstanceOf(User::class);
+        expect($user->getNombre())->toBe("Carlos");
     });
 
-    it("Devuelve un User cuando se encuentra por ID", function() {
-        allow($this->dbConnection)->toReceive('query')->andReturn(['id' => 1, 'nombre' => 'Carlos']);
-        $user = $this->userRepo->findById(1);
-        expect($user->getNombre())->toBe('Carlos');
+    it("devuelve null si no existe", function () {
+        expect($this->userRepo->findById(999))->toBe(null);
+    });
+
+    it("guarda y recupera un nuevo User", function () {
+        $nuevo = new User(3, "Lucía");
+        $this->userRepo->save($nuevo);
+        expect($this->userRepo->findById(3)->getNombre())->toBe("Lucía");
     });
 });
 ```
 
 ---
 
-## ▶️ Ejecutar las pruebas
+### 📂 spec/UserServiceSpec.php
+Prueba reglas de negocio.
+```php
+use App\Application\Service\UserService;
+use App\Domain\Entity\User;
+use App\Infrastructure\Persistence\DatabaseConnection;
+use App\Infrastructure\Persistence\UserDatabaseRepository;
 
+describe("UserService", function () {
+    beforeEach(function () { $this->service = new UserService(new UserDatabaseRepository(new DatabaseConnection())); });
+
+    it("lanza excepción si ID < 1", function () {
+        $user = new User(0, "Prueba");
+        expect(fn() => $this->service->registerUser($user))
+            ->toThrow(new DomainException("El ID del usuario debe ser mayor que 0"));
+    });
+
+    it("lanza excepción si nombre vacío", function () {
+        $user = new User(2, "");
+        expect(fn() => $this->service->registerUser($user))
+            ->toThrow(new DomainException("El nombre no puede estar vacío"));
+    });
+});
+```
+
+---
+
+### 📂 spec/EmailValidatorSpec.php
+```php
+use App\EmailValidator;
+
+describe("EmailValidator", function() {
+    it("devuelve true para correo válido", function() {
+        expect((new EmailValidator())->validateEmail("usuario@dominio.com"))->toBe(true);
+    });
+    it("devuelve false para correo inválido", function() {
+        expect((new EmailValidator())->validateEmail("correo-invalido"))->toBe(false);
+    });
+});
+```
+
+---
+
+## 🔑 Patrones y principios aplicados
+
+- **Repositorio**: separa contrato (`UserRepository`) de implementación (`UserDatabaseRepository`).  
+- **Inyección de dependencias**: `UserService` recibe un repositorio en el constructor.  
+- **Mocks/Doubles**: se pueden usar en tests para aislar el servicio de la persistencia.  
+- **SOLID**:  
+  - SRP: cada clase tiene una responsabilidad única.  
+  - DIP: el servicio depende de una abstracción, no de una implementación concreta.  
+- **DRY**: lógica no duplicada.  
+- **KISS**: persistencia simple en memoria para facilitar pruebas.  
+
+---
+
+## 🚀 Cómo ejecutar los tests
+
+Instalar dependencias:
+```bash
+composer install
+```
+
+Ejecutar Kahlan:
 ```bash
 vendor/bin/kahlan
-```
-
-Salida esperada:
-```
-UserRepository
-  ✓ Devuelve un User cuando se encuentra por ID
-
-Passed 1 of 1 PASS in 0.02 seconds
 ```
 
 ---
 
 ## ✅ Conclusión
 
-El proyecto aplica el **patrón repositorio** para:
-- Definir un contrato (`UserRepository`).
-- Implementar una versión concreta (`UserDatabaseRepository`).
-- Simular la base de datos (`DatabaseConnection`).
-- Facilitar pruebas unitarias con Kahlan gracias a la **inyección de dependencias**.
-- Podríamos hacer una separación más exhaustiva dejando la lógica de negocio como validaciones, lanzar excepciones desde un `UserService`.
-
----
-
-## 🛠️ Ejemplo de UserService
-
-Para mantener una separación más clara entre **lógica de negocio** y **persistencia**, podemos introducir un `UserService`.  
-El servicio aplica reglas de negocio (validaciones, excepciones) antes de delegar en el repositorio.
-
-```php
-namespace App\Service;
-
-use App\Entity\User;
-use App\Repository\UserRepository;
-
-class UserService {
-    private UserRepository $repo;
-
-    public function __construct(UserRepository $repo) {
-        $this->repo = $repo;
-    }
-
-    public function registerUser(User $user): void {
-        // ✅ Lógica de negocio: validación
-
-        if ($user->getId() <= 1) {
-            throw new \DomainException("El ID del usuario debe ser mayor que 1");
-        }
-
-        if (empty($user->getNombre())) {
-            throw new \DomainException("El nombre no puede estar vacío");
-        }
-
-        // 👉 Delegamos en el repositorio para persistir
-        $this->repo->save($user);
-    }
-
-    public function listUsers(): array {
-        return $this->repo->findAll();
-    }
-}
-```
-
----
-
-### 🔑 Puntos clave
-- El **UserService** aplica reglas de negocio (validaciones, restricciones).  
-- El **UserRepository** se limita a la persistencia (guardar, buscar, listar).  
-- Esto permite que las pruebas unitarias validen tanto la lógica de negocio como la persistencia de forma independiente.  
-
----
-
-## 📌 Diferencia de responsabilidades
-
-- **Repositorio**  
-  - Encapsula el acceso a datos.  
-  - Puede implementar lógica de persistencia como *upsert* (update si existe, insert si no).  
-  - No debería imponer reglas de negocio arbitrarias.  
-
-- **Servicio de dominio**  
-  - Aplica reglas como “el ID debe ser mayor que 1” o “el nombre no puede estar vacío”.  
-  - Valida antes de llamar al repositorio.  
-  - Lanza excepciones de dominio (`DomainException`, `InvalidArgumentException`, etc.) si algo no cumple las reglas.  
-
----
-
-## 🧪 Uso de mocks en pruebas
-
-- **Repositorio (`UserRepository`)**: se prueba con la conexión simulada (`DatabaseConnection`) para validar la persistencia.  
-- **Servicio (`UserService`)**: se prueba con un repositorio **mockeado** usando `Double` de Kahlan, para aislar la lógica de negocio y comprobar que lanza excepciones cuando los datos son inválidos.  
-
-👉 De esta forma, los tests se centran en cada capa por separado:  
-- Persistencia → con datos simulados.  
-- Lógica de negocio → con repositorios simulados.  
-
----
+Este proyecto muestra cómo:
+- Organizar el código en capas para separar responsabilidades.  
+- Aplicar patrones como repositorio e inyección de dependencias.  
+- Usar Kahlan para escribir specs claros y expresivos
