@@ -1,8 +1,8 @@
 <?php
-namespace App\Repository;
+namespace App\Infrastructure\Persistence;
 
-use App\DatabaseConnection;
-use App\Entity\User;
+use App\Domain\Entity\User;
+use App\Domain\Repository\UserRepository;
 
 class UserDatabaseRepository implements UserRepository {
     private DatabaseConnection $db;
@@ -16,17 +16,16 @@ class UserDatabaseRepository implements UserRepository {
         return $row ? new User($row['id'], $row['nombre']) : null;
     }
 
-    /** @return User[] */
     public function findAll(): array {
         $rows = $this->db->queryArray("SELECT * FROM users");
         return array_map(fn($row) => new User($row['id'], $row['nombre']), $rows);
     }
 
     public function save(User $user): void {
-        if ($user->getId() < 0) {
-            throw new \InvalidArgumentException("El ID del usuario no puede ser negativo");
-        }
-
         $this->db->insertOrUpdate($user);
+    }
+
+    public function deleteById(int $id): void {
+        $this->db->deleteById($id);
     }
 }
