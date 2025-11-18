@@ -269,7 +269,6 @@ describe("UserRepository", function() {
 
 ## ▶️ Ejecutar las pruebas
 
-<<<<<<< HEAD
 ```bash
 vendor/bin/kahlan
 ```
@@ -286,26 +285,14 @@ Passed 1 of 1 PASS in 0.02 seconds
 
 ## ✅ Conclusión
 
-Con este proyecto tienes:
-- Composer instalado globalmente.
-- Kahlan configurado como dependencia de desarrollo.
-- Autoload de Composer apuntando a `src/`.
-- Configuración de Kahlan en `kahlan-config.php`.
-- Aplicación del **patrón repositorio** para desacoplar negocio y persistencia.
-- Pruebas unitarias con Kahlan que validan el comportamiento de tus repositorios.
-
-Esto asegura un flujo de trabajo **limpio, escalable y fácil de presentar** en tu proyecto de pruebas.
-=======
 El proyecto aplica el **patrón repositorio** para:
 - Definir un contrato (`UserRepository`).
 - Implementar una versión concreta (`UserDatabaseRepository`).
 - Simular la base de datos (`DatabaseConnection`).
 - Facilitar pruebas unitarias con Kahlan gracias a la **inyección de dependencias**.
-- Podríamos hacer una separación más exhaustiva dejando la lógica de negocio como validaciones, lanzar excepciones desde un UserService
+- Podríamos hacer una separación más exhaustiva dejando la lógica de negocio como validaciones, lanzar excepciones desde un `UserService`.
+
 ---
-
-Perfecto 🙌, aquí tienes un snippet listo para añadir a tu README que muestra cómo introducir un **UserService** para separar la lógica de negocio de la persistencia. Esto complementa tu conclusión y deja claro dónde deberían ir las validaciones:
-
 
 ## 🛠️ Ejemplo de UserService
 
@@ -331,6 +318,7 @@ class UserService {
             throw new \DomainException("El ID del usuario debe ser mayor que 1");
         }
 
+
         if (empty($user->getNombre())) {
             throw new \DomainException("El nombre no puede estar vacío");
         }
@@ -350,6 +338,18 @@ class UserService {
 - El **UserRepository** se limita a la persistencia (guardar, buscar, listar).
 - Esto permite que las pruebas unitarias validen tanto la lógica de negocio como la persistencia de forma independiente.
 
+---
+
+## 📌 Diferencia de responsabilidades
+
+- **Repositorio**  
+  - Encapsula el acceso a datos.  
+  - Puede implementar lógica de persistencia como *upsert* (update si existe, insert si no).  
+  - No debería imponer reglas de negocio arbitrarias.
+
+- **Servicio de dominio**  
+  - Aplica reglas como “el ID debe ser mayor que 1” o “el nombre no puede estar vacío”.  
+  - Valida antes de llamar al repositorio.  
+  - Lanza excepciones de dominio (`DomainException`, `InvalidArgumentException`, etc.) si algo no cumple las reglas.
 
 ---
->>>>>>> b69597d (readme)
