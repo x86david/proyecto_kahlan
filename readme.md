@@ -269,6 +269,7 @@ describe("UserRepository", function() {
 
 ## ▶️ Ejecutar las pruebas
 
+<<<<<<< HEAD
 ```bash
 vendor/bin/kahlan
 ```
@@ -294,3 +295,61 @@ Con este proyecto tienes:
 - Pruebas unitarias con Kahlan que validan el comportamiento de tus repositorios.
 
 Esto asegura un flujo de trabajo **limpio, escalable y fácil de presentar** en tu proyecto de pruebas.
+=======
+El proyecto aplica el **patrón repositorio** para:
+- Definir un contrato (`UserRepository`).
+- Implementar una versión concreta (`UserDatabaseRepository`).
+- Simular la base de datos (`DatabaseConnection`).
+- Facilitar pruebas unitarias con Kahlan gracias a la **inyección de dependencias**.
+- Podríamos hacer una separación más exhaustiva dejando la lógica de negocio como validaciones, lanzar excepciones desde un UserService
+---
+
+Perfecto 🙌, aquí tienes un snippet listo para añadir a tu README que muestra cómo introducir un **UserService** para separar la lógica de negocio de la persistencia. Esto complementa tu conclusión y deja claro dónde deberían ir las validaciones:
+
+
+## 🛠️ Ejemplo de UserService
+
+Para mantener una separación más clara entre **lógica de negocio** y **persistencia**, podemos introducir un `UserService`.  
+El servicio aplica reglas de negocio (validaciones, excepciones) antes de delegar en el repositorio.
+
+```php
+namespace App\Service;
+
+use App\Entity\User;
+use App\Repository\UserRepository;
+
+class UserService {
+    private UserRepository $repo;
+
+    public function __construct(UserRepository $repo) {
+        $this->repo = $repo;
+    }
+
+    public function registerUser(User $user): void {
+        // ✅ Lógica de negocio: validación
+        if ($user->getId() <= 1) {
+            throw new \DomainException("El ID del usuario debe ser mayor que 1");
+        }
+
+        if (empty($user->getNombre())) {
+            throw new \DomainException("El nombre no puede estar vacío");
+        }
+
+        // 👉 Delegamos en el repositorio para persistir
+        $this->repo->save($user);
+    }
+
+    public function listUsers(): array {
+        return $this->repo->findAll();
+    }
+}
+```
+
+### 🔑 Puntos clave
+- El **UserService** aplica reglas de negocio (validaciones, restricciones).
+- El **UserRepository** se limita a la persistencia (guardar, buscar, listar).
+- Esto permite que las pruebas unitarias validen tanto la lógica de negocio como la persistencia de forma independiente.
+
+
+---
+>>>>>>> b69597d (readme)
